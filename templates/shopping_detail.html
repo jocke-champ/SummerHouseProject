@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ shopping_list.name }} - Inköpslistor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .nav { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+        .nav a:hover { text-decoration: underline; }
+        .detail-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .back-btn { display: inline-block; margin-bottom: 20px; padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
+        .back-btn:hover { background: #545b62; }
+        .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+        .add-item-form { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .form-row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.small { min-width: 80px; }
+        .form-group.medium { min-width: 120px; }
+        .form-group.large { flex: 1; min-width: 200px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
+        }
+        .form-group textarea { height: 60px; resize: vertical; }
+        .btn { background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
+        .btn:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .shopping-items { margin: 20px 0; }
+        .item { display: flex; align-items: center; padding: 15px; margin: 8px 0; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .item.checked { opacity: 0.6; background: #f8f9fa; }
+        .item-checkbox { margin-right: 15px; }
+        .item-checkbox input { width: 20px; height: 20px; cursor: pointer; }
+        .item-content { flex: 1; }
+        .item-name { font-weight: bold; margin-bottom: 5px; }
+        .item-name.checked { text-decoration: line-through; color: #6c757d; }
+        .item-details { font-size: 0.9em; color: #666; }
+        .item-actions { margin-left: 10px; }
+        .item-actions form { display: inline; }
+        .progress { margin: 20px 0; }
+        .progress-bar { width: 100%; height: 12px; background: #e9ecef; border-radius: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #28a745; transition: width 0.3s; }
+        h1 { color: #333; margin-bottom: 10px; }
+        h3 { color: #555; }
+        .complete-list { text-align: center; margin: 20px 0; }
+        .stats { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.9em; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/">📋 Att göra</a>
+            <a href="/shopping">💰 Inköpslista</a>
+        </div>
+
+        <a href="/shopping" class="back-btn">← Tillbaka till inköpslistor</a>
+        
+        <div class="detail-card">
+            <h1>👌 {{ shopping_list.name }}</h1>
+            
+            <div class="meta">
+                <strong>Skapad av:</strong> {{ shopping_list.created_by }} | 
+                <strong>Datum:</strong> {{ shopping_list.created_at.strftime('%B %d, %Y vid %H:%M') }}
+                {% if shopping_list.description %}
+                    <br><strong>Anteckningar:</strong> {{ shopping_list.description }}
+                {% endif %}
+            </div>
+            
+            {% set total_items = items|length %}
+            {% set checked_items = items|selectattr("is_checked")|list|length %}
+            {% set progress = (checked_items / total_items * 100) if total_items > 0 else 0 %}
+            
+            <div class="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ progress }}%"></div>
+                </div>
+                <div class="stats">
+                    <span>{{ checked_items }}/{{ total_items }} artiklar klara</span>
+                    <span>{{ "%.0f"|format(progress) }}%</span>
+                </div>
+            </div>
+
+            {% if not shopping_list.is_completed %}
+            <div class="add-item-form">
+                <h3>✏ Lägg till artikel</h3>
+                <form action="/api/shopping-lists/{{ shopping_list.id }}/items" method="post">
+                    <div class="form-row">
+                        <div class="form-group large">
+                            <label for="item_name">Artikelnamn:</label>
+                            <input type="text" id="item_name" name="item_name" placeholder="t.ex. Mjölk, Skruvar, Färg" required>
+                        </div>
+                        
+                        <div class="form-group small">
+                            <label for="quantity">Antal:</label>
+                            <input type="number" id="quantity" name="quantity" step="0.1" value="1" min="0.1" required>
+                        </div>
+                        
+                        <div class="form-group medium">
+                            <label for="unit">Enhet:</label>
+                            <select id="unit" name="unit">
+                                <option value="st">st</option>
+                                <option value="kg">kg</option>
+                                <option value="liter">liter</option>
+                                <option value="flaskor">flaskor</option>
+                                <option value="lådor">lådor</option>
+                                <option value="påsar">påsar</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group medium">
+                            <label for="added_by">Tillagd av:</label>
+                            <input type="text" id="added_by" name="added_by" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn">Lägg till</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Anteckningar (valfritt):</label>
+                        <input type="text" id="notes" name="notes" placeholder="Märkesförslag, specifika detaljer, etc.">
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="shopping-items">
+                <h3>Inköpsartiklar ({{ items|length }})</h3>
+                
+                {% for item in items %}
+                <div class="item {% if item.is_checked %}checked{% endif %}">
+                    <div class="item-checkbox">
+                        {% if not shopping_list.is_completed %}
+                        <form action="/api/shopping-items/{{ item.id }}/toggle" method="post" style="margin: 0;">
+                            <input type="hidden" name="checked_by" value="Snabb bockning">
+                            <input type="checkbox" {% if item.is_checked %}checked{% endif %} 
+                                   onchange="this.form.submit()">
+                        </form>
+                        {% else %}
+                        <input type="checkbox" {% if item.is_checked %}checked{% endif %} disabled>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="item-content">
+                        <div class="item-name {% if item.is_checked %}checked{% endif %}">
+                            {{ item.quantity }} {{ item.unit }} {{ item.item_name }}
+                        </div>
+                        <div class="item-details">
+                            Tillagd av {{ item.added_by }} {{ item.added_at.strftime('%m-%d %H:%M') }}
+                            {% if item.notes %} | {{ item.notes }}{% endif %}
+                            {% if item.is_checked %} | ✅ Avbockad av {{ item.checked_by }} {{ item.checked_at.strftime('%m-%d %H:%M') }}{% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if not shopping_list.is_completed %}
+                    <div class="item-actions">
+                        <form action="/api/shopping-items/{{ item.id }}/delete" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Ta bort denna artikel?')">🗑️</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p style="text-align: center; color: #666; padding: 20px;">
+                    Inga artiklar i listan ännu. Lägg till några ovan!
+                </p>
+                {% endfor %}
+            </div>
+
+            {% if not shopping_list.is_completed and total_items > 0 %}
+            <div class="complete-list">
+                <form action="/api/shopping-lists/{{ shopping_list.id }}/complete" method="post">
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Markera hela inköpslistan som klar?')">
+                        ✌ Markera lista som klar
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
