@@ -10,6 +10,10 @@ from typing import Optional
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+def is_htmx_request(request: Request) -> bool:
+    """Check if the request is coming from htmx"""
+    return request.headers.get("HX-Request") == "true"
+
 @router.get("/", response_class=HTMLResponse)
 async def home(
     request: Request,
@@ -75,6 +79,13 @@ async def home(
     authors = db.query(Todo.author).distinct().all()
     authors = [author[0] for author in authors if author[0]]
 
+    # If it's an htmx request, return only the todos section
+    if is_htmx_request(request):
+        return templates.TemplateResponse("partials/todos_list.html", {
+            "request": request,
+            "todos": todos,
+        })
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "todos": todos,
@@ -87,6 +98,7 @@ async def home(
 
 @router.post("/api/todos")
 async def create_todo(
+    request: Request,
     title: str = Form(...),
     description: str = Form(...),
     author: str = Form(...),
@@ -102,6 +114,14 @@ async def create_todo(
     db.add(todo)
     db.commit()
     db.refresh(todo)
+    
+    # If it's an htmx request, return the new todo card
+    if is_htmx_request(request):
+        return templates.TemplateResponse("partials/todo_card.html", {
+            "request": request,
+            "todo": todo,
+        })
+    
     return RedirectResponse(url="/", status_code=303)
 
 @router.get("/todo/{todo_id}")
@@ -114,19 +134,25 @@ async def get_todo_detail(todo_id: int, request: Request, db: Session = Depends(
         "todo": todo
     })
 
-@router.post("/api/todos/{todo_id}/delete")
-async def delete_todo(todo_id: int, db: Session = Depends(get_db)):
+@router.delete("/api/todos/{todo_id}")
+async def delete_todo(todo_id: int, request: Request, db: Session = Depends(get_db)):
     todo = db.query(Todo).filter(Todo.id == todo_id).first()
     if not todo:
         raise HTTPException(status_code=404, detail="Todo not found")
 
     db.delete(todo)
     db.commit()
+    
+    # If it's an htmx request, return empty response (element will be removed)
+    if is_htmx_request(request):
+        return HTMLResponse(content="", status_code=200)
+    
     return RedirectResponse(url="/", status_code=303)
 
 @router.post("/api/todos/{todo_id}/comments")
 async def add_comment(
     todo_id: int,
+    request: Request,
     author: str = Form(...),
     content: str = Form(...),
     db: Session = Depends(get_db)
@@ -142,6 +168,16 @@ async def add_comment(
     )
     db.add(comment)
     db.commit()
+    
+    # If it's an htmx request, return the updated comments list
+    if is_htmx_request(request):
+        # Refresh the todo to get the updated comments
+        db.refresh(todo)
+        return templates.TemplateResponse("partials/comments_list.html", {
+            "request": request,
+            "todo": todo,
+        })
+    
     return RedirectResponse(url=f"/todo/{todo_id}", status_code=303)
 
 @router.get("/api/todos")

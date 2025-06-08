@@ -2,45 +2,8 @@
 <html>
 <head>
     <title>Summer House Manager</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .nav { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
-        .nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
-        .nav a:hover { text-decoration: underline; }
-        .nav a.active { color: #28a745; }
-        .form-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .controls-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .controls-row { display: flex; gap: 15px; align-items: end; flex-wrap: wrap; }
-        .control-group { display: flex; flex-direction: column; min-width: 120px; }
-        .control-group label { font-size: 0.9em; margin-bottom: 5px; font-weight: bold; }
-        .control-group select, .control-group input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; }
-        .todo-card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .todo-card:hover { transform: translateY(-2px); }
-        .todo-content { cursor: pointer; flex: 1; }
-        .todo-header { display: flex; justify-content: space-between; align-items: start; gap: 15px; }
-        .author { color: #666; font-size: 0.9em; margin-top: 10px; }
-        .priority-high { border-left: 4px solid #ff4444; }
-        .priority-medium { border-left: 4px solid #ffaa00; }
-        .priority-low { border-left: 4px solid #44ff44; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
-        }
-        .form-group textarea { height: 80px; resize: vertical; }
-        .btn { background: #007bff; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
-        .btn:hover { background: #0056b3; }
-        .btn-clear { background: #6c757d; }
-        .btn-clear:hover { background: #545b62; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .delete-btn { padding: 6px 10px; font-size: 0.8em; margin-left: 10px; }
-        h1 { color: #333; text-align: center; }
-        h2 { color: #555; }
-        .results-info { color: #666; font-size: 0.9em; margin-bottom: 10px; }
-        .image-count { color: #999; font-size: 0.8em; }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
     <div class="container">
@@ -53,7 +16,10 @@
 
         <div class="form-card">
             <h2>Lägg till nytt projekt</h2>
-            <form action="/api/todos" method="post">
+            <form hx-post="/api/todos" 
+                  hx-target="#todos" 
+                  hx-swap="afterbegin"
+                  hx-on::after-request="this.reset()">
                 <div class="form-group">
                     <label for="title">Titel:</label>
                     <input type="text" id="title" name="title" required>
@@ -78,61 +44,74 @@
                     </select>
                 </div>
 
-                <button type="submit" class="btn">Lägg till att göra</button>
+                <button type="submit" class="btn">
+                    Lägg till att göra
+                    <span class="htmx-indicator loading-spinner"></span>
+                </button>
             </form>
         </div>
 
         <div class="controls-card">
-            <form method="get" id="filterForm">
-                <div class="controls-row">
-                    <div class="control-group">
-                        <label for="sort_by">Sortera efter:</label>
-                        <select name="sort_by" id="sort_by" onchange="document.getElementById('filterForm').submit()">
-                            <option value="date" {% if current_sort == "date" %}selected{% endif %}>Datum</option>
-                            <option value="priority" {% if current_sort == "priority" %}selected{% endif %}>Prioritet</option>
-                            <option value="author" {% if current_sort == "author" %}selected{% endif %}>Skapare</option>
-                            <option value="title" {% if current_sort == "title" %}selected{% endif %}>Titel</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="order">Ordning:</label>
-                        <select name="order" id="order" onchange="document.getElementById('filterForm').submit()">
-                            <option value="desc" {% if current_order == "desc" %}selected{% endif %}>↓ Ny</option>
-                            <option value="asc" {% if current_order == "asc" %}selected{% endif %}>↑ Gammal</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="filter_priority">Prioritet:</label>
-                        <select name="filter_priority" id="filter_priority" onchange="document.getElementById('filterForm').submit()">
-                            <option value="">Alla</option>
-                            <option value="high" {% if current_priority_filter == "high" %}selected{% endif %}>Viktigt</option>
-                            <option value="medium" {% if current_priority_filter == "medium" %}selected{% endif %}>Sådär viktigt</option>
-                            <option value="low" {% if current_priority_filter == "low" %}selected{% endif %}>Inte viktigt</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="filter_author">Skapare:</label>
-                        <select name="filter_author" id="filter_author" onchange="document.getElementById('filterForm').submit()">
-                            <option value="">Alla</option>
-                            {% for author in authors %}
-                            <option value="{{ author }}" {% if current_author_filter == author %}selected{% endif %}>{{ author }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label>&nbsp;</label>
-                        <button type="button" class="btn btn-clear" onclick="window.location.href='/'">Ta bort filter</button>
-                    </div>
+            <div class="controls-row">
+                <div class="control-group">
+                    <label for="sort_by">Sortera efter:</label>
+                    <select name="sort_by" id="sort_by" 
+                            hx-get="/" 
+                            hx-target="#todos" 
+                            hx-include="[name='order'], [name='filter_priority'], [name='filter_author']">
+                        <option value="date" {% if current_sort == "date" %}selected{% endif %}>Datum</option>
+                        <option value="priority" {% if current_sort == "priority" %}selected{% endif %}>Prioritet</option>
+                        <option value="author" {% if current_sort == "author" %}selected{% endif %}>Skapare</option>
+                        <option value="title" {% if current_sort == "title" %}selected{% endif %}>Titel</option>
+                    </select>
                 </div>
-            </form>
+
+                <div class="control-group">
+                    <label for="order">Ordning:</label>
+                    <select name="order" id="order" 
+                            hx-get="/" 
+                            hx-target="#todos" 
+                            hx-include="[name='sort_by'], [name='filter_priority'], [name='filter_author']">
+                        <option value="desc" {% if current_order == "desc" %}selected{% endif %}>↓ Ny</option>
+                        <option value="asc" {% if current_order == "asc" %}selected{% endif %}>↑ Gammal</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="filter_priority">Prioritet:</label>
+                    <select name="filter_priority" id="filter_priority" 
+                            hx-get="/" 
+                            hx-target="#todos" 
+                            hx-include="[name='sort_by'], [name='order'], [name='filter_author']">
+                        <option value="">Alla</option>
+                        <option value="high" {% if current_priority_filter == "high" %}selected{% endif %}>Viktigt</option>
+                        <option value="medium" {% if current_priority_filter == "medium" %}selected{% endif %}>Sådär viktigt</option>
+                        <option value="low" {% if current_priority_filter == "low" %}selected{% endif %}>Inte viktigt</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="filter_author">Skapare:</label>
+                    <select name="filter_author" id="filter_author" 
+                            hx-get="/" 
+                            hx-target="#todos" 
+                            hx-include="[name='sort_by'], [name='order'], [name='filter_priority']">
+                        <option value="">Alla</option>
+                        {% for author in authors %}
+                        <option value="{{ author }}" {% if current_author_filter == author %}selected{% endif %}>{{ author }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-clear" hx-get="/" hx-target="#todos">Ta bort filter</button>
+                </div>
+            </div>
         </div>
 
         <div class="results-info">
-            Visar {{ todos|length }} projekt
+            <span id="results-count">Visar {{ todos|length }} projekt</span>
             {% if current_priority_filter or current_author_filter %}
                 (filtered)
             {% endif %}
@@ -140,7 +119,7 @@
 
         <div id="todos">
             {% for todo in todos %}
-            <div class="todo-card priority-{{ todo.priority }}">
+            <div class="todo-card priority-{{ todo.priority }}" id="todo-{{ todo.id }}">
                 <div class="todo-header">
                     <div class="todo-content" onclick="location.href='/todo/{{ todo.id }}'">
                         <h3>{{ todo.title }}</h3>
@@ -152,15 +131,19 @@
                             {% endif %}
                         </p>
                     </div>
-                    <form action="/api/todos/{{ todo.id }}/delete" method="post">
-                        <button type="submit" class="btn btn-danger delete-btn" onclick="return confirm('Är du säker på att du vill ta bort detta projekt?')">
-                            🗑️
-                        </button>
-                    </form>
+                    <button class="btn btn-danger delete-btn" 
+                            hx-delete="/api/todos/{{ todo.id }}" 
+                            hx-target="#todo-{{ todo.id }}" 
+                            hx-swap="outerHTML"
+                            hx-confirm="Är du säker på att du vill ta bort detta projekt?">
+                        🗑️
+                    </button>
                 </div>
             </div>
             {% else %}
-            <p>Hittade inga projekt 😨. {% if current_priority_filter or current_author_filter %}Testa att ta bort filter{% endif %} Lägg till ett projekt! 👆</p>
+            <div class="empty-state">
+                <p>Hittade inga projekt 😨. {% if current_priority_filter or current_author_filter %}Testa att ta bort filter{% endif %} Lägg till ett projekt! 👆</p>
+            </div>
             {% endfor %}
         </div>
 

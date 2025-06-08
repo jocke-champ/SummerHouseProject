@@ -1,0 +1,27 @@
+{% for todo in todos %}
+<div class="todo-card priority-{{ todo.priority }}" id="todo-{{ todo.id }}">
+    <div class="todo-header">
+        <div class="todo-content" onclick="location.href='/todo/{{ todo.id }}'">
+            <h3>{{ todo.title }}</h3>
+            <p>{{ todo.description[:100] }}{% if todo.description|length > 100 %}...{% endif %}</p>
+            <p class="author">
+                Av: {{ todo.author }} | {{ todo.created_at.strftime('%Y-%m-%d %H:%M') }}
+                {% if todo.images %}
+                    <span class="image-count">📷 {{ todo.images|length }}</span>
+                {% endif %}
+            </p>
+        </div>
+        <button class="btn btn-danger delete-btn" 
+                hx-delete="/api/todos/{{ todo.id }}" 
+                hx-target="#todo-{{ todo.id }}" 
+                hx-swap="outerHTML"
+                hx-confirm="Är du säker på att du vill ta bort detta projekt?">
+            🗑️
+        </button>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Hittade inga projekt 😨. Lägg till ett projekt! 👆</p>
+</div>
+{% endfor %} 

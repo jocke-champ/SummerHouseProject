@@ -2,52 +2,8 @@
 <html>
 <head>
     <title>{{ shopping_list.name }} - Inköpslistor</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .nav { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
-        .nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
-        .nav a:hover { text-decoration: underline; }
-        .detail-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .back-btn { display: inline-block; margin-bottom: 20px; padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
-        .back-btn:hover { background: #545b62; }
-        .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
-        .add-item-form { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .form-row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
-        .form-group { margin-bottom: 15px; }
-        .form-group.small { min-width: 80px; }
-        .form-group.medium { min-width: 120px; }
-        .form-group.large { flex: 1; min-width: 200px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
-        }
-        .form-group textarea { height: 60px; resize: vertical; }
-        .btn { background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
-        .btn:hover { background: #218838; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-warning { background: #ffc107; color: #212529; }
-        .btn-warning:hover { background: #e0a800; }
-        .shopping-items { margin: 20px 0; }
-        .item { display: flex; align-items: center; padding: 15px; margin: 8px 0; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .item.checked { opacity: 0.6; background: #f8f9fa; }
-        .item-checkbox { margin-right: 15px; }
-        .item-checkbox input { width: 20px; height: 20px; cursor: pointer; }
-        .item-content { flex: 1; }
-        .item-name { font-weight: bold; margin-bottom: 5px; }
-        .item-name.checked { text-decoration: line-through; color: #6c757d; }
-        .item-details { font-size: 0.9em; color: #666; }
-        .item-actions { margin-left: 10px; }
-        .item-actions form { display: inline; }
-        .progress { margin: 20px 0; }
-        .progress-bar { width: 100%; height: 12px; background: #e9ecef; border-radius: 6px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #28a745; transition: width 0.3s; }
-        h1 { color: #333; margin-bottom: 10px; }
-        h3 { color: #555; }
-        .complete-list { text-align: center; margin: 20px 0; }
-        .stats { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.9em; color: #666; }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
     <div class="container">
@@ -73,20 +29,23 @@
             {% set checked_items = items|selectattr("is_checked")|list|length %}
             {% set progress = (checked_items / total_items * 100) if total_items > 0 else 0 %}
             
-            <div class="progress">
+            <div class="progress" id="progress-section">
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: {{ progress }}%"></div>
                 </div>
                 <div class="stats">
-                    <span>{{ checked_items }}/{{ total_items }} artiklar klara</span>
-                    <span>{{ "%.0f"|format(progress) }}%</span>
+                    <span id="progress-text">{{ checked_items }}/{{ total_items }} artiklar klara</span>
+                    <span id="progress-percent">{{ "%.0f"|format(progress) }}%</span>
                 </div>
             </div>
 
             {% if not shopping_list.is_completed %}
             <div class="add-item-form">
                 <h3>✏ Lägg till artikel</h3>
-                <form action="/api/shopping-lists/{{ shopping_list.id }}/items" method="post">
+                <form hx-post="/api/shopping-lists/{{ shopping_list.id }}/items" 
+                      hx-target="#shopping-items" 
+                      hx-swap="afterbegin"
+                      hx-on::after-request="this.reset(); updateProgress()">
                     <div class="form-row">
                         <div class="form-group large">
                             <label for="item_name">Artikelnamn:</label>
@@ -117,7 +76,10 @@
                         
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <button type="submit" class="btn">Lägg till</button>
+                            <button type="submit" class="btn btn-success">
+                                Lägg till
+                                <span class="htmx-indicator loading-spinner"></span>
+                            </button>
                         </div>
                     </div>
                     
@@ -130,68 +92,111 @@
             {% endif %}
 
             <div class="shopping-items">
-                <h3>Inköpsartiklar ({{ items|length }})</h3>
+                <h3>Inköpsartiklar (<span id="item-count">{{ items|length }}</span>)</h3>
                 
-                {% for item in items %}
-                <div class="item {% if item.is_checked %}checked{% endif %}">
-                    <div class="item-checkbox">
-                        {% if not shopping_list.is_completed %}
-                        <form action="/api/shopping-items/{{ item.id }}/toggle" method="post" style="margin: 0;">
-                            <input type="hidden" name="checked_by" value="Snabb bockning">
+                <div id="shopping-items">
+                    {% for item in items %}
+                    <div class="item {% if item.is_checked %}checked{% endif %}" id="item-{{ item.id }}">
+                        <div class="item-checkbox">
+                            {% if not shopping_list.is_completed %}
                             <input type="checkbox" {% if item.is_checked %}checked{% endif %} 
-                                   onchange="this.form.submit()">
-                        </form>
-                        {% else %}
-                        <input type="checkbox" {% if item.is_checked %}checked{% endif %} disabled>
+                                   hx-post="/api/shopping-items/{{ item.id }}/toggle" 
+                                   hx-vals='{"checked_by": "Snabb bockning"}'
+                                   hx-target="#item-{{ item.id }}"
+                                   hx-swap="outerHTML"
+                                   hx-on::after-request="updateProgress()">
+                            {% else %}
+                            <input type="checkbox" {% if item.is_checked %}checked{% endif %} disabled>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="item-content">
+                            <div class="item-name {% if item.is_checked %}checked{% endif %}">
+                                {{ item.quantity }} {{ item.unit }} {{ item.item_name }}
+                            </div>
+                            <div class="item-details">
+                                Tillagd av {{ item.added_by }} {{ item.added_at.strftime('%m-%d %H:%M') }}
+                                {% if item.notes %} | {{ item.notes }}{% endif %}
+                                {% if item.is_checked %} | ✅ Avbockad av {{ item.checked_by }} {{ item.checked_at.strftime('%m-%d %H:%M') }}{% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if not shopping_list.is_completed %}
+                        <div class="item-actions">
+                                                    <button class="btn btn-danger" 
+                                hx-delete="/api/shopping-items/{{ item.id }}" 
+                                hx-target="#item-{{ item.id }}"
+                                hx-swap="outerHTML" 
+                                hx-confirm="Ta bort denna artikel?"
+                                hx-on::after-request="updateProgress()">🗑️</button>
+                        </div>
                         {% endif %}
                     </div>
-                    
-                    <div class="item-content">
-                        <div class="item-name {% if item.is_checked %}checked{% endif %}">
-                            {{ item.quantity }} {{ item.unit }} {{ item.item_name }}
-                        </div>
-                        <div class="item-details">
-                            Tillagd av {{ item.added_by }} {{ item.added_at.strftime('%m-%d %H:%M') }}
-                            {% if item.notes %} | {{ item.notes }}{% endif %}
-                            {% if item.is_checked %} | ✅ Avbockad av {{ item.checked_by }} {{ item.checked_at.strftime('%m-%d %H:%M') }}{% endif %}
-                        </div>
+                    {% else %}
+                    <div class="empty-state" id="empty-items">
+                        <p>Inga artiklar i listan ännu. Lägg till några ovan!</p>
                     </div>
-                    
-                    {% if not shopping_list.is_completed %}
-                    <div class="item-actions">
-                        <form action="/api/shopping-items/{{ item.id }}/delete" method="post" style="display: inline;">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Ta bort denna artikel?')">🗑️</button>
-                        </form>
-                    </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% else %}
-                <p style="text-align: center; color: #666; padding: 20px;">
-                    Inga artiklar i listan ännu. Lägg till några ovan!
-                </p>
-                {% endfor %}
             </div>
 
             {% if not shopping_list.is_completed and total_items > 0 %}
-<div class="complete-list">
-    <form action="/api/shopping-lists/{{ shopping_list.id }}/complete" method="post">
-        <button type="submit" class="btn btn-warning" onclick="return confirm('Markera hela inköpslistan som klar?')">
-            ✌ Markera lista som klar
-        </button>
-    </form>
-</div>
-{% endif %}
+            <div class="complete-list">
+                <button class="btn btn-warning" 
+                        hx-post="/api/shopping-lists/{{ shopping_list.id }}/complete" 
+                        hx-confirm="Markera hela inköpslistan som klar?"
+                        hx-target="body"
+                        hx-swap="outerHTML">
+                    ✌ Markera lista som klar
+                </button>
+            </div>
+            {% endif %}
 
-{% if shopping_list.is_completed %}
-<div class="complete-list">
-    <form action="/api/shopping-lists/{{ shopping_list.id }}/delete" method="post">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Ta bort hela inköpslistan permanent? Detta kan inte ångras.')">
-            🗑️ Ta bort lista
-        </button>
-    </form>
-</div>
-{% endif %}
+            {% if shopping_list.is_completed %}
+            <div class="complete-list">
+                <button class="btn btn-danger" 
+                        hx-delete="/api/shopping-lists/{{ shopping_list.id }}" 
+                        hx-confirm="Ta bort hela inköpslistan permanent? Detta kan inte ångras."
+                        hx-redirect="/shopping">
+                    🗑️ Ta bort lista
+                </button>
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    <script>
+        function updateProgress() {
+            // This function will be called after item operations to update progress
+            const items = document.querySelectorAll('#shopping-items .item');
+            const checkedItems = document.querySelectorAll('#shopping-items .item.checked');
+            const total = items.length;
+            const checked = checkedItems.length;
+            const progress = total > 0 ? (checked / total * 100) : 0;
+            
+            // Update progress bar
+            const progressFill = document.querySelector('.progress-fill');
+            if (progressFill) {
+                progressFill.style.width = progress + '%';
+            }
+            
+            // Update text
+            const progressText = document.getElementById('progress-text');
+            if (progressText) {
+                progressText.textContent = `${checked}/${total} artiklar klara`;
+            }
+            
+            const progressPercent = document.getElementById('progress-percent');
+            if (progressPercent) {
+                progressPercent.textContent = Math.round(progress) + '%';
+            }
+            
+            // Update item count
+            const itemCount = document.getElementById('item-count');
+            if (itemCount) {
+                itemCount.textContent = total;
+            }
+        }
+    </script>
 </body>
 </html>

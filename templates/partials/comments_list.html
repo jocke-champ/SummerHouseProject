@@ -1,0 +1,12 @@
+{% if todo.comments %}
+<div class="comments-list">
+    {% for comment in todo.comments %}
+    <div class="comment">
+        <div class="comment-meta">
+            <strong>{{ comment.author }}</strong> - {{ comment.created_at.strftime('%B %d, %Y vid %H:%M') }}
+        </div>
+        <div class="comment-content">{{ comment.content }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %} 

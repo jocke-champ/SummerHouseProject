@@ -1,0 +1,25 @@
+{% set total_items = list.items|length %}
+{% set checked_items = list.items|selectattr("is_checked")|list|length %}
+{% set progress = (checked_items / total_items * 100) if total_items > 0 else 0 %}
+
+<div class="list-card {% if list.is_completed %}completed{% elif total_items > 0 and checked_items < total_items %}active{% endif %}" 
+     onclick="location.href='/shopping/{{ list.id }}'">
+    <h3>{{ list.name }}</h3>
+    {% if list.description %}
+    <p>{{ list.description }}</p>
+    {% endif %}
+    
+    <div class="progress">
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ progress }}%"></div>
+        </div>
+        <small>{{ checked_items }}/{{ total_items }} artiklar klara</small>
+    </div>
+    
+    <p class="meta">
+        Skapad av: {{ list.created_by }} | {{ list.created_at.strftime('%Y-%m-%d %H:%M') }}
+        {% if list.is_completed %}
+            | ✅ Klar
+        {% endif %}
+    </p>
+</div> 

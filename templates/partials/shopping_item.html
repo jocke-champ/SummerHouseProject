@@ -1,0 +1,36 @@
+<div class="item {% if item.is_checked %}checked{% endif %}" id="item-{{ item.id }}">
+    <div class="item-checkbox">
+        {% if not shopping_list.is_completed %}
+        <input type="checkbox" {% if item.is_checked %}checked{% endif %} 
+               hx-post="/api/shopping-items/{{ item.id }}/toggle" 
+               hx-vals='{"checked_by": "Snabb bockning"}'
+               hx-target="#item-{{ item.id }}"
+               hx-swap="outerHTML"
+               hx-on::after-request="updateProgress()">
+        {% else %}
+        <input type="checkbox" {% if item.is_checked %}checked{% endif %} disabled>
+        {% endif %}
+    </div>
+    
+    <div class="item-content">
+        <div class="item-name {% if item.is_checked %}checked{% endif %}">
+            {{ item.quantity }} {{ item.unit }} {{ item.item_name }}
+        </div>
+        <div class="item-details">
+            Tillagd av {{ item.added_by }} {{ item.added_at.strftime('%m-%d %H:%M') }}
+            {% if item.notes %} | {{ item.notes }}{% endif %}
+            {% if item.is_checked %} | ✅ Avbockad av {{ item.checked_by }} {{ item.checked_at.strftime('%m-%d %H:%M') }}{% endif %}
+        </div>
+    </div>
+    
+    {% if not shopping_list.is_completed %}
+    <div class="item-actions">
+        <button class="btn btn-danger" 
+                hx-delete="/api/shopping-items/{{ item.id }}" 
+                hx-target="#item-{{ item.id }}"
+                hx-swap="outerHTML" 
+                hx-confirm="Ta bort denna artikel?"
+                hx-on::after-request="updateProgress()">🗑️</button>
+    </div>
+    {% endif %}
+</div> 

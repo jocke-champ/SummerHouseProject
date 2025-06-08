@@ -2,34 +2,8 @@
 <html>
 <head>
     <title>Inköpslistor - Sommarstuga Manager</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .nav { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
-        .nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
-        .nav a:hover { text-decoration: underline; }
-        .nav a.active { color: #28a745; }
-        .form-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .list-card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .list-card:hover { transform: translateY(-2px); }
-        .list-card.completed { opacity: 0.7; border-left: 4px solid #28a745; }
-        .list-card.active { border-left: 4px solid #007bff; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group textarea { 
-            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
-        }
-        .form-group textarea { height: 60px; resize: vertical; }
-        .btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-        .btn:hover { background: #218838; }
-        .meta { color: #666; font-size: 0.9em; margin-top: 10px; }
-        .progress { margin-top: 10px; }
-        .progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #28a745; transition: width 0.3s; }
-        h1 { color: #333; text-align: center; }
-        h2 { color: #555; }
-        .empty-state { text-align: center; color: #666; padding: 40px; }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
     <div class="container">
@@ -42,7 +16,10 @@
         
         <div class="form-card">
             <h2>Skapa ny inköpslista</h2>
-            <form action="/api/shopping-lists" method="post">
+            <form hx-post="/api/shopping-lists" 
+                  hx-target="#shopping-lists" 
+                  hx-swap="afterbegin"
+                  hx-on::after-request="this.reset()">
                 <div class="form-group">
                     <label for="name">Listnamn:</label>
                     <input type="text" id="name" name="name" placeholder="t.ex. Matinköp, Järnhandel" required>
@@ -58,11 +35,14 @@
                     <input type="text" id="created_by" name="created_by" required>
                 </div>
                 
-                <button type="submit" class="btn">Skapa inköpslista</button>
+                <button type="submit" class="btn btn-success">
+                    Skapa inköpslista
+                    <span class="htmx-indicator loading-spinner"></span>
+                </button>
             </form>
         </div>
 
-        <h2>Dina inköpslistor ({{ shopping_lists|length }})</h2>
+        <h2>Dina inköpslistor (<span id="list-count">{{ shopping_lists|length }}</span>)</h2>
         
         <div id="shopping-lists">
             {% for list in shopping_lists %}
@@ -103,5 +83,20 @@
             <a href="/docs">API-dokumentation</a>
         </p>
     </div>
+
+    <script>
+        function updateListCount() {
+            const lists = document.querySelectorAll('#shopping-lists .list-card');
+            const listCount = document.getElementById('list-count');
+            if (listCount) {
+                listCount.textContent = lists.length;
+            }
+        }
+
+        // Update count after htmx operations
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            updateListCount();
+        });
+    </script>
 </body>
 </html>

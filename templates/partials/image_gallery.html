@@ -1,0 +1,10 @@
+{% if todo.images %}
+<div class="image-gallery">
+    {% for image in todo.images %}
+    <div class="image-item">
+        <img src="/{{ image.file_path }}" alt="{{ image.original_name }}" onclick="window.open('/{{ image.file_path }}', '_blank')">
+        <div class="image-name">{{ image.original_name }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %} 

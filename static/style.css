@@ -1,0 +1,786 @@
+/* Summer House Manager - Receipt Style */
+
+/* Base Styles */
+body { 
+    font-family: 'Courier New', monospace;
+    margin: 20px auto;
+    background: #f5f3f0;
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(0,0,0,.1) 1px, transparent 0);
+    background-size: 20px 20px;
+    color: #2c2c2c;
+    line-height: 1.4;
+}
+
+.container { 
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fefefe;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+    position: relative;
+}
+
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: repeating-linear-gradient(
+        to right,
+        #ccc 0px,
+        #ccc 3px,
+        transparent 3px,
+        transparent 8px
+    );
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: repeating-linear-gradient(
+        to right,
+        #ccc 0px,
+        #ccc 3px,
+        transparent 3px,
+        transparent 8px
+    );
+}
+
+/* Receipt Header */
+.nav { 
+    background: #fefefe;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px dashed #ccc;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.nav::before {
+    content: '═══════════════════════════════════';
+    display: block;
+    text-align: center;
+    color: #999;
+    font-size: 0.8em;
+    margin-bottom: 10px;
+}
+
+.nav::after {
+    content: '═══════════════════════════════════';
+    display: block;
+    text-align: center;
+    color: #999;
+    font-size: 0.8em;
+    margin-top: 10px;
+}
+
+.nav a { 
+    margin: 0 15px;
+    text-decoration: none;
+    color: #2c2c2c;
+    font-weight: bold;
+    padding: 5px 10px;
+    border: 1px dashed #ccc;
+    background: #f9f9f9;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+}
+
+.nav a:hover { 
+    background: #eee;
+    border-color: #999;
+}
+
+.nav a.active { 
+    background: #2c2c2c;
+    color: #fefefe;
+    border-color: #2c2c2c;
+}
+
+/* Cards - Receipt Sections */
+.form-card, .detail-card, .controls-card { 
+    background: #fefefe;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px dashed #ccc;
+    position: relative;
+}
+
+.form-card::before,
+.detail-card::before,
+.controls-card::before {
+    content: '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    background: #fefefe;
+    color: #ccc;
+    font-size: 0.7em;
+    height: 1px;
+    overflow: hidden;
+}
+
+.detail-card { 
+    padding: 25px;
+}
+
+.controls-card { 
+    padding: 15px;
+    background: #f9f9f9;
+}
+
+.todo-card, .list-card { 
+    background: #fefefe;
+    padding: 15px;
+    margin: 8px 0;
+    border: 1px solid #e0e0e0;
+    border-left: 3px solid #ccc;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.todo-card::before,
+.list-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid #e0e0e0;
+    border-top: 10px solid #e0e0e0;
+}
+
+.todo-card:hover, .list-card:hover { 
+    transform: translateY(-1px);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    border-left-color: #999;
+}
+
+.list-card { 
+    cursor: pointer;
+}
+
+.list-card.completed { 
+    opacity: 0.7;
+    border-left-color: #4a9;
+    background: #f8fdf8;
+}
+
+.list-card.active { 
+    border-left-color: #39c;
+    background: #f8fcff;
+}
+
+/* Priority Styles - Receipt Categories */
+.priority-high { 
+    border-left-color: #d44;
+    background: #fdf8f8;
+}
+
+.priority-medium { 
+    border-left-color: #f84;
+    background: #fffdf8;
+}
+
+.priority-low { 
+    border-left-color: #4a9;
+    background: #f8fdf8;
+}
+
+.detail-card.priority-high { 
+    border-left: 5px solid #d44;
+}
+
+.detail-card.priority-medium { 
+    border-left: 5px solid #f84;
+}
+
+.detail-card.priority-low { 
+    border-left: 5px solid #4a9;
+}
+
+.priority-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border: 1px dashed #ccc;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+    background: #f9f9f9;
+    color: #2c2c2c;
+    letter-spacing: 0.5px;
+}
+
+.priority-high-badge { 
+    border-color: #d44;
+    color: #d44;
+}
+
+.priority-medium-badge { 
+    border-color: #f84;
+    color: #f84;
+}
+
+.priority-low-badge { 
+    border-color: #4a9;
+    color: #4a9;
+}
+
+/* Forms - Receipt Input Style */
+.form-group { 
+    margin-bottom: 12px;
+}
+
+.form-group label { 
+    display: block;
+    margin-bottom: 3px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+    color: #666;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 0;
+    box-sizing: border-box;
+    font-family: 'Courier New', monospace;
+    background: #fefefe;
+    font-size: 0.9em;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: #999;
+    outline: none;
+    background: #fff;
+}
+
+.form-group textarea { 
+    height: 60px;
+    resize: vertical;
+}
+
+.form-row { 
+    display: flex;
+    gap: 10px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.form-group.small { 
+    min-width: 80px;
+}
+
+.form-group.medium { 
+    min-width: 120px;
+}
+
+.form-group.large { 
+    flex: 1;
+    min-width: 200px;
+}
+
+.controls-row { 
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.control-group { 
+    display: flex;
+    flex-direction: column;
+    min-width: 100px;
+}
+
+.control-group label { 
+    font-size: 0.75em;
+    margin-bottom: 3px;
+    font-weight: bold;
+    color: #666;
+}
+
+.control-group select, .control-group input { 
+    padding: 6px;
+    border: 1px solid #ccc;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+}
+
+/* Buttons - Receipt Style */
+.btn { 
+    background: #2c2c2c;
+    color: #fefefe;
+    padding: 8px 16px;
+    border: 1px solid #2c2c2c;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn:hover { 
+    background: #1a1a1a;
+    transform: translateY(-1px);
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-clear { 
+    background: #666;
+    border-color: #666;
+}
+
+.btn-clear:hover { 
+    background: #555;
+}
+
+.btn-danger { 
+    background: #d44;
+    border-color: #d44;
+}
+
+.btn-danger:hover { 
+    background: #c33;
+}
+
+.btn-warning { 
+    background: #f84;
+    border-color: #f84;
+    color: #2c2c2c;
+}
+
+.btn-warning:hover { 
+    background: #e73;
+}
+
+.btn.btn-success { 
+    background: #4a9;
+    border-color: #4a9;
+}
+
+.btn.btn-success:hover { 
+    background: #398;
+}
+
+.back-btn { 
+    display: inline-block;
+    margin-bottom: 15px;
+    padding: 6px 12px;
+    background: #666;
+    color: #fefefe;
+    text-decoration: none;
+    border: 1px solid #666;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8em;
+    text-transform: uppercase;
+}
+
+.back-btn:hover { 
+    background: #555;
+}
+
+.delete-btn { 
+    padding: 4px 8px;
+    font-size: 0.75em;
+    margin-left: 8px;
+}
+
+/* Content Layout */
+.todo-content { 
+    cursor: pointer;
+    flex: 1;
+}
+
+.todo-header { 
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 12px;
+}
+
+.author { 
+    color: #666;
+    font-size: 0.8em;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.meta { 
+    color: #666;
+    font-size: 0.85em;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f9f9f9;
+    border: 1px dashed #ddd;
+}
+
+.results-info { 
+    color: #666;
+    font-size: 0.8em;
+    margin-bottom: 8px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.image-count { 
+    color: #999;
+    font-size: 0.75em;
+}
+
+.description { 
+    line-height: 1.5;
+    margin: 15px 0;
+    white-space: pre-wrap;
+    border-left: 2px solid #eee;
+    padding-left: 10px;
+}
+
+/* Typography - Receipt Headers */
+h1 { 
+    color: #2c2c2c;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0;
+    font-size: 1.4em;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 10px;
+}
+
+h2 { 
+    color: #2c2c2c;
+    text-transform: uppercase;
+    font-size: 1.1em;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+    border-bottom: 1px dotted #ddd;
+    padding-bottom: 5px;
+}
+
+h3 { 
+    color: #2c2c2c;
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+/* Shopping List Specific */
+.add-item-form { 
+    background: #f9f9f9;
+    padding: 15px;
+    margin: 15px 0;
+    border: 1px dashed #ccc;
+}
+
+.shopping-items { 
+    margin: 15px 0;
+}
+
+.item { 
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    margin: 5px 0;
+    background: #fefefe;
+    border: 1px solid #e0e0e0;
+    border-left: 2px solid #ccc;
+}
+
+.item.checked { 
+    opacity: 0.6;
+    background: #f5f5f5;
+    border-left-color: #4a9;
+    text-decoration: line-through;
+}
+
+.item-checkbox { 
+    margin-right: 12px;
+}
+
+.item-checkbox input { 
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.item-content { 
+    flex: 1;
+}
+
+.item-name { 
+    font-weight: bold;
+    margin-bottom: 3px;
+    font-size: 0.9em;
+}
+
+.item-name.checked { 
+    text-decoration: line-through;
+    color: #999;
+}
+
+.item-details { 
+    font-size: 0.75em;
+    color: #666;
+}
+
+.item-actions { 
+    margin-left: 8px;
+}
+
+.item-actions form { 
+    display: inline;
+}
+
+/* Progress Bars - Receipt Style */
+.progress { 
+    margin: 15px 0;
+}
+
+.progress-bar { 
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        #f8f8f8 2px,
+        #f8f8f8 4px
+    );
+}
+
+.shopping-index .progress-bar { 
+    height: 6px;
+}
+
+.progress-fill { 
+    height: 100%;
+    background: #4a9;
+    transition: width 0.3s;
+    position: relative;
+    z-index: 1;
+}
+
+.stats { 
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 0.8em;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.complete-list { 
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px dashed #ccc;
+    background: #f9f9f9;
+}
+
+/* Images Section */
+.images-section { 
+    margin-top: 25px;
+}
+
+.image-upload { 
+    margin: 15px 0;
+    padding: 15px;
+    border: 2px dashed #ccc;
+    background: #f9f9f9;
+    text-align: center;
+}
+
+.image-gallery { 
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.image-item { 
+    border: 1px solid #ccc;
+    background: #fefefe;
+    overflow: hidden;
+}
+
+.image-item img { 
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+}
+
+.image-item .image-name { 
+    padding: 8px;
+    background: #f9f9f9;
+    font-size: 0.7em;
+    color: #666;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+.file-input { 
+    margin: 8px 0;
+}
+
+/* Comments Section */
+.comments-section { 
+    margin-top: 25px;
+}
+
+.comments-list { 
+    margin: 15px 0;
+}
+
+.comment { 
+    background: #f9f9f9;
+    padding: 12px;
+    margin: 8px 0;
+    border-left: 3px solid #ccc;
+    border: 1px solid #e0e0e0;
+}
+
+.comment-meta { 
+    font-size: 0.75em;
+    color: #666;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.comment-content { 
+    line-height: 1.4;
+    white-space: pre-wrap;
+    font-size: 0.9em;
+}
+
+.add-comment { 
+    background: #f9f9f9;
+    padding: 15px;
+    margin-top: 15px;
+    border: 1px dashed #ccc;
+}
+
+/* Utility Classes */
+.empty-state { 
+    text-align: center;
+    color: #666;
+    padding: 30px;
+    font-style: italic;
+    border: 1px dashed #ddd;
+    background: #f9f9f9;
+}
+
+/* HTMX Loading States */
+.htmx-request .htmx-indicator { 
+    display: inline-block;
+}
+
+.htmx-indicator { 
+    display: none;
+}
+
+.loading-spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #2c2c2c;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Receipt Footer */
+.container::after {
+    content: 'GRASO SUMMER HOUSE SYSTEM v2.0 - POWERED BY HTMX';
+    position: absolute;
+    bottom: -25px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.6em;
+    color: #999;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        margin: 10px;
+    }
+    
+    .container {
+        margin: 0;
+    }
+    
+    .form-row, .controls-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .form-group.small, .form-group.medium {
+        min-width: 100%;
+    }
+    
+    .control-group {
+        min-width: 100%;
+    }
+    
+    .todo-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .nav a {
+        margin: 0 5px;
+        font-size: 0.8em;
+        padding: 3px 6px;
+    }
+    
+    .image-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+} 
