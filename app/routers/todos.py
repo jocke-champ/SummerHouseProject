@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
-from app.models import Todo
+from app.models import Todo, Comment
 from app.dependencies import get_db
 from typing import Optional
 
@@ -123,6 +123,26 @@ async def delete_todo(todo_id: int, db: Session = Depends(get_db)):
     db.delete(todo)
     db.commit()
     return RedirectResponse(url="/", status_code=303)
+
+@router.post("/api/todos/{todo_id}/comments")
+async def add_comment(
+    todo_id: int,
+    author: str = Form(...),
+    content: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    todo = db.query(Todo).filter(Todo.id == todo_id).first()
+    if not todo:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    
+    comment = Comment(
+        todo_id=todo_id,
+        author=author,
+        content=content
+    )
+    db.add(comment)
+    db.commit()
+    return RedirectResponse(url=f"/todo/{todo_id}", status_code=303)
 
 @router.get("/api/todos")
 async def get_todos(

@@ -21,6 +21,7 @@ class Todo(Base):
     created_at = Column(DateTime, default=swedish_now)
     
     images = relationship("TodoImage", back_populates="todo", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="todo", cascade="all, delete-orphan")
 
 class TodoImage(Base):
     __tablename__ = "todo_images"
@@ -62,6 +63,17 @@ class ShoppingItem(Base):
     added_at = Column(DateTime, default=swedish_now)
     
     shopping_list = relationship("ShoppingList", back_populates="items")
+    
+class Comment(Base):
+    __tablename__ = "comments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    todo_id = Column(Integer, ForeignKey("todos.id"))
+    author = Column(String)
+    content = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    todo = relationship("Todo", back_populates="comments")
 
 # Create tables
 Base.metadata.create_all(bind=engine)

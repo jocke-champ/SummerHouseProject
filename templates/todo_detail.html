@@ -35,6 +35,14 @@
         .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
         .btn:hover { background: #0056b3; }
         .file-input { margin: 10px 0; }
+
+        .comments-section { margin-top: 30px; }
+        .comments-list { margin: 20px 0; }
+        .comment { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+        .comment-meta { font-size: 0.9em; color: #666; margin-bottom: 8px; }
+        .comment-content { line-height: 1.5; white-space: pre-wrap; }
+        .add-comment { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; }
+
         h1 { color: #333; margin-bottom: 10px; }
     </style>
 </head>
@@ -111,6 +119,38 @@
                     }
                 });
                 </script>
+            </div>
+
+            <div class="comments-section">
+                <h3>💬 Kommentarer ({{ todo.comments|length }})</h3>
+                
+                {% if todo.comments %}
+                <div class="comments-list">
+                    {% for comment in todo.comments %}
+                    <div class="comment">
+                        <div class="comment-meta">
+                            <strong>{{ comment.author }}</strong> - {{ comment.created_at.strftime('%B %d, %Y vid %H:%M') }}
+                        </div>
+                        <div class="comment-content">{{ comment.content }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="add-comment">
+                    <h4>✏️ Lägg till kommentar</h4>
+                    <form action="/api/todos/{{ todo.id }}/comments" method="post">
+                        <div style="margin-bottom: 15px;">
+                            <label for="author">Namn:</label>
+                            <input type="text" name="author" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="content">Kommentar:</label>
+                            <textarea name="content" required style="width: 100%; height: 80px; padding: 8px; margin-top: 5px;"></textarea>
+                        </div>
+                        <button type="submit" class="btn">Skicka kommentar</button>
+                    </form>
+                </div>
             </div>
             
             <div style="margin-top: 30px; text-align: center;">
