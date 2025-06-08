@@ -3,164 +3,135 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
-from app.models import Todo
+from app.models import ShoppingList, ShoppingItem
 from app.dependencies import get_db
 from typing import Optional
+from datetime import datetime
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-@router.get("/", response_class=HTMLResponse)
-async def home(
-    request: Request, 
-    sort_by: str = Query("date", regex="^(date|priority|author|title)$"),
-    order: str = Query("desc", regex="^(asc|desc)$"),
-    filter_priority: Optional[str] = Query(None, regex="^(high|medium|low)$"),
-    filter_author: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    # Start with base query
-    query = db.query(Todo)
-    
-    # Apply filters
-    if filter_priority:
-        query = query.filter(Todo.priority == filter_priority)
-    
-    if filter_author:
-        query = query.filter(Todo.author.ilike(f"%{filter_author}%"))
-    
-    # Apply sorting
-    if sort_by == "date":
-        if order == "desc":
-            query = query.order_by(desc(Todo.created_at))
-        else:
-            query = query.order_by(asc(Todo.created_at))
-    elif sort_by == "priority":
-        # Custom priority order: high -> medium -> low
-        if order == "desc":
-            # High priority first
-            query = query.order_by(
-                desc(Todo.priority == "high"),
-                desc(Todo.priority == "medium"),
-                desc(Todo.priority == "low")
-            )
-        else:
-            # Low priority first
-            query = query.order_by(
-                asc(Todo.priority == "low"),
-                asc(Todo.priority == "medium"),
-                asc(Todo.priority == "high")
-            )
-    elif sort_by == "author":
-        if order == "desc":
-            query = query.order_by(desc(Todo.author))
-        else:
-            query = query.order_by(asc(Todo.author))
-    elif sort_by == "title":
-        if order == "desc":
-            query = query.order_by(desc(Todo.title))
-        else:
-            query = query.order_by(asc(Todo.title))
-    
-    todos = query.all()
-    
-    # Get unique authors for filter dropdown
-    authors = db.query(Todo.author).distinct().all()
-    authors = [author[0] for author in authors]
-    
-    return templates.TemplateResponse("index.html", {
-        "request": request, 
-        "todos": todos,
-        "authors": authors,
-        "current_sort": sort_by,
-        "current_order": order,
-        "current_priority_filter": filter_priority,
-        "current_author_filter": filter_author,
-    })
-
-@router.post("/api/todos")
-async def create_todo(
-    title: str = Form(...),
-    description: str = Form(...),
-    author: str = Form(...),
-    priority: str = Form("medium"),
-    db: Session = Depends(get_db)
-):
-    todo = Todo(
-        title=title,
-        description=description,
-        author=author,
-        priority=priority
-    )
-    db.add(todo)
-    db.commit()
-    db.refresh(todo)
-    return RedirectResponse(url="/", status_code=303)
-
-@router.get("/todo/{todo_id}")
-async def get_todo_detail(todo_id: int, request: Request, db: Session = Depends(get_db)):
-    todo = db.query(Todo).filter(Todo.id == todo_id).first()
-    if not todo:
-        raise HTTPException(status_code=404, detail="Todo not found")
-    return templates.TemplateResponse("todo_detail.html", {
+@router.get("/shopping", response_class=HTMLResponse)
+async def shopping_home(request: Request, db: Session = Depends(get_db)):
+    shopping_lists = db.query(ShoppingList).order_by(desc(ShoppingList.created_at)).all()
+    return templates.TemplateResponse("shopping_index.html", {
         "request": request,
-        "todo": todo
+        "shopping_lists": shopping_lists
     })
 
-@router.post("/api/todos/{todo_id}/delete")
-async def delete_todo(todo_id: int, db: Session = Depends(get_db)):
-    todo = db.query(Todo).filter(Todo.id == todo_id).first()
-    if not todo:
-        raise HTTPException(status_code=404, detail="Todo not found")
-    
-    db.delete(todo)
-    db.commit()
-    return RedirectResponse(url="/", status_code=303)
-
-@router.get("/api/todos")
-async def get_todos(
-    sort_by: str = Query("date", regex="^(date|priority|author|title)$"),
-    order: str = Query("desc", regex="^(asc|desc)$"),
-    filter_priority: Optional[str] = Query(None, regex="^(high|medium|low)$"),
-    filter_author: Optional[str] = Query(None),
+@router.post("/api/shopping-lists")
+async def create_shopping_list(
+    name: str = Form(...),
+    description: str = Form(""),
+    created_by: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # Same logic as home endpoint but return JSON
-    query = db.query(Todo)
+    shopping_list = ShoppingList(
+        name=name,
+        description=description,
+        created_by=created_by
+    )
+    db.add(shopping_list)
+    db.commit()
+    db.refresh(shopping_list)
+    return RedirectResponse(url="/shopping", status_code=303)
+
+@router.get("/shopping/{list_id}")
+async def get_shopping_list_detail(
+    list_id: int, 
+    request: Request, 
+    db: Session = Depends(get_db)
+):
+    shopping_list = db.query(ShoppingList).filter(ShoppingList.id == list_id).first()
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
     
-    if filter_priority:
-        query = query.filter(Todo.priority == filter_priority)
+    # Get items sorted by checked status, then by name
+    items = db.query(ShoppingItem).filter(
+        ShoppingItem.shopping_list_id == list_id
+    ).order_by(ShoppingItem.is_checked, ShoppingItem.item_name).all()
     
-    if filter_author:
-        query = query.filter(Todo.author.ilike(f"%{filter_author}%"))
+    return templates.TemplateResponse("shopping_detail.html", {
+        "request": request,
+        "shopping_list": shopping_list,
+        "items": items
+    })
+
+@router.post("/api/shopping-lists/{list_id}/items")
+async def add_shopping_item(
+    list_id: int,
+    item_name: str = Form(...),
+    quantity: float = Form(1.0),
+    unit: str = Form("pcs"),
+    notes: str = Form(""),
+    added_by: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Check if list exists
+    shopping_list = db.query(ShoppingList).filter(ShoppingList.id == list_id).first()
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
     
-    if sort_by == "date":
-        if order == "desc":
-            query = query.order_by(desc(Todo.created_at))
-        else:
-            query = query.order_by(asc(Todo.created_at))
-    elif sort_by == "priority":
-        if order == "desc":
-            query = query.order_by(
-                desc(Todo.priority == "high"),
-                desc(Todo.priority == "medium"),
-                desc(Todo.priority == "low")
-            )
-        else:
-            query = query.order_by(
-                asc(Todo.priority == "low"),
-                asc(Todo.priority == "medium"),
-                asc(Todo.priority == "high")
-            )
-    elif sort_by == "author":
-        if order == "desc":
-            query = query.order_by(desc(Todo.author))
-        else:
-            query = query.order_by(asc(Todo.author))
-    elif sort_by == "title":
-        if order == "desc":
-            query = query.order_by(desc(Todo.title))
-        else:
-            query = query.order_by(asc(Todo.title))
+    item = ShoppingItem(
+        shopping_list_id=list_id,
+        item_name=item_name,
+        quantity=quantity,
+        unit=unit,
+        notes=notes,
+        added_by=added_by
+    )
+    db.add(item)
+    db.commit()
+    return RedirectResponse(url=f"/shopping/{list_id}", status_code=303)
+
+@router.post("/api/shopping-items/{item_id}/toggle")
+async def toggle_item_checked(
+    item_id: int,
+    checked_by: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    item = db.query(ShoppingItem).filter(ShoppingItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
     
-    return query.all()
+    item.is_checked = not item.is_checked
+    if item.is_checked:
+        item.checked_by = checked_by
+        item.checked_at = datetime.utcnow()
+    else:
+        item.checked_by = None
+        item.checked_at = None
+    
+    db.commit()
+    return RedirectResponse(url=f"/shopping/{item.shopping_list_id}", status_code=303)
+
+@router.post("/api/shopping-items/{item_id}/delete")
+async def delete_shopping_item(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    item = db.query(ShoppingItem).filter(ShoppingItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    list_id = item.shopping_list_id
+    db.delete(item)
+    db.commit()
+    return RedirectResponse(url=f"/shopping/{list_id}", status_code=303)
+
+@router.post("/api/shopping-lists/{list_id}/complete")
+async def complete_shopping_list(
+    list_id: int,
+    db: Session = Depends(get_db)
+):
+    shopping_list = db.query(ShoppingList).filter(ShoppingList.id == list_id).first()
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+    
+    shopping_list.is_completed = True
+    db.commit()
+    return RedirectResponse(url="/shopping", status_code=303)
+
+@router.get("/api/shopping-lists")
+async def get_shopping_lists(db: Session = Depends(get_db)):
+    return db.query(ShoppingList).order_by(desc(ShoppingList.created_at)).all()
