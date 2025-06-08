@@ -173,14 +173,24 @@
             </div>
 
             {% if not shopping_list.is_completed and total_items > 0 %}
-            <div class="complete-list">
-                <form action="/api/shopping-lists/{{ shopping_list.id }}/complete" method="post">
-                    <button type="submit" class="btn btn-warning" onclick="return confirm('Markera hela inköpslistan som klar?')">
-                        ✌ Markera lista som klar
-                    </button>
-                </form>
-            </div>
-            {% endif %}
+<div class="complete-list">
+    <form action="/api/shopping-lists/{{ shopping_list.id }}/complete" method="post">
+        <button type="submit" class="btn btn-warning" onclick="return confirm('Markera hela inköpslistan som klar?')">
+            ✌ Markera lista som klar
+        </button>
+    </form>
+</div>
+{% endif %}
+
+{% if shopping_list.is_completed %}
+<div class="complete-list">
+    <form action="/api/shopping-lists/{{ shopping_list.id }}/delete" method="post">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Ta bort hela inköpslistan permanent? Detta kan inte ångras.')">
+            🗑️ Ta bort lista
+        </button>
+    </form>
+</div>
+{% endif %}
         </div>
     </div>
 </body>

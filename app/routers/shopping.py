@@ -105,19 +105,22 @@ async def toggle_item_checked(
     db.commit()
     return RedirectResponse(url=f"/shopping/{item.shopping_list_id}", status_code=303)
 
-@router.post("/api/shopping-items/{item_id}/delete")
-async def delete_shopping_item(
-    item_id: int,
+@router.post("/api/shopping-lists/{list_id}/delete")
+async def delete_shopping_list(
+    list_id: int,
     db: Session = Depends(get_db)
 ):
-    item = db.query(ShoppingItem).filter(ShoppingItem.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+    shopping_list = db.query(ShoppingList).filter(ShoppingList.id == list_id).first()
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
     
-    list_id = item.shopping_list_id
-    db.delete(item)
+    # Delete all associated items first (if not handled by cascade)
+    db.query(ShoppingItem).filter(ShoppingItem.shopping_list_id == list_id).delete()
+    
+    # Delete the shopping list
+    db.delete(shopping_list)
     db.commit()
-    return RedirectResponse(url=f"/shopping/{list_id}", status_code=303)
+    return RedirectResponse(url="/shopping", status_code=303)
 
 @router.post("/api/shopping-lists/{list_id}/complete")
 async def complete_shopping_list(
