@@ -25,8 +25,8 @@
         .priority-low { border-left: 4px solid #44ff44; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group textarea, .form-group select { 
-            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
         }
         .form-group textarea { height: 80px; resize: vertical; }
         .btn { background: #007bff; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
@@ -50,7 +50,7 @@
         </div>
 
         <h1>📋 Att-göra-lista på Gräsö</h1>
-        
+
         <div class="form-card">
             <h2>Lägg till nytt projekt</h2>
             <form action="/api/todos" method="post">
@@ -58,17 +58,17 @@
                     <label for="title">Titel:</label>
                     <input type="text" id="title" name="title" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="description">Beskrivning:</label>
                     <textarea id="description" name="description" placeholder="Detaljer om projektet..." required></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="author">Ditt namn:</label>
                     <input type="text" id="author" name="author" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="priority">Prio:</label>
                     <select id="priority" name="priority">
@@ -77,7 +77,7 @@
                         <option value="high">Mycket viktigt</option>
                     </select>
                 </div>
-                
+
                 <button type="submit" class="btn">Lägg till att göra</button>
             </form>
         </div>
@@ -94,7 +94,7 @@
                             <option value="title" {% if current_sort == "title" %}selected{% endif %}>Titel</option>
                         </select>
                     </div>
-                    
+
                     <div class="control-group">
                         <label for="order">Ordning:</label>
                         <select name="order" id="order" onchange="document.getElementById('filterForm').submit()">
@@ -102,7 +102,7 @@
                             <option value="asc" {% if current_order == "asc" %}selected{% endif %}>↑ Gammal</option>
                         </select>
                     </div>
-                    
+
                     <div class="control-group">
                         <label for="filter_priority">Prioritet:</label>
                         <select name="filter_priority" id="filter_priority" onchange="document.getElementById('filterForm').submit()">
@@ -112,7 +112,7 @@
                             <option value="low" {% if current_priority_filter == "low" %}selected{% endif %}>Inte viktigt</option>
                         </select>
                     </div>
-                    
+
                     <div class="control-group">
                         <label for="filter_author">Skapare:</label>
                         <select name="filter_author" id="filter_author" onchange="document.getElementById('filterForm').submit()">
@@ -122,7 +122,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="control-group">
                         <label>&nbsp;</label>
                         <button type="button" class="btn btn-clear" onclick="window.location.href='/'">Ta bort filter</button>
@@ -163,7 +163,7 @@
             <p>Hittade inga projekt 😨. {% if current_priority_filter or current_author_filter %}Testa att ta bort filter{% endif %} Lägg till ett projekt! 👆</p>
             {% endfor %}
         </div>
-        
+
         <p style="text-align: center; margin-top: 30px;">
             <a href="/docs">API Dokumentation</a>
         </p>

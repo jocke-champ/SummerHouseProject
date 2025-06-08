@@ -12,32 +12,33 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_class=HTMLResponse)
 async def home(
-    request: Request, 
+    request: Request,
     sort_by: str = Query("date", regex="^(date|priority|author|title)$"),
     order: str = Query("desc", regex="^(asc|desc)$"),
-    filter_priority: Optional[str] = Query(None),  # Ta bort regex här
+    filter_priority: Optional[str] = Query(None),
     filter_author: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
-    # Konvertera tomma strängar till None
+    # Convert empty strings to None
     if filter_priority == "":
         filter_priority = None
     if filter_author == "":
         filter_author = None
-    
-    # Validera filter_priority manuellt om det inte är None
+
+    # Validate filter_priority manually
     if filter_priority is not None and filter_priority not in ["high", "medium", "low"]:
         raise HTTPException(status_code=400, detail="Invalid priority filter")
+    
     # Start with base query
     query = db.query(Todo)
-    
+
     # Apply filters
     if filter_priority:
         query = query.filter(Todo.priority == filter_priority)
-    
+
     if filter_author:
         query = query.filter(Todo.author.ilike(f"%{filter_author}%"))
-    
+
     # Apply sorting
     if sort_by == "date":
         if order == "desc":
@@ -45,17 +46,13 @@ async def home(
         else:
             query = query.order_by(asc(Todo.created_at))
     elif sort_by == "priority":
-        # Custom priority order: high -> medium -> low
-        priority_order = {"high": 1, "medium": 2, "low": 3}
         if order == "desc":
-            # High priority first
             query = query.order_by(
                 desc(Todo.priority == "high"),
                 desc(Todo.priority == "medium"),
                 desc(Todo.priority == "low")
             )
         else:
-            # Low priority first
             query = query.order_by(
                 asc(Todo.priority == "low"),
                 asc(Todo.priority == "medium"),
@@ -71,15 +68,15 @@ async def home(
             query = query.order_by(desc(Todo.title))
         else:
             query = query.order_by(asc(Todo.title))
-    
+
     todos = query.all()
-    
+
     # Get unique authors for filter dropdown
     authors = db.query(Todo.author).distinct().all()
-    authors = [author[0] for author in authors]
-    
+    authors = [author[0] for author in authors if author[0]]
+
     return templates.TemplateResponse("index.html", {
-        "request": request, 
+        "request": request,
         "todos": todos,
         "authors": authors,
         "current_sort": sort_by,
@@ -87,63 +84,6 @@ async def home(
         "current_priority_filter": filter_priority,
         "current_author_filter": filter_author,
     })
-
-@router.get("/api/todos")
-async def get_todos(
-    sort_by: str = Query("date", regex="^(date|priority|author|title)$"),
-    order: str = Query("desc", regex="^(asc|desc)$"),
-    filter_priority: Optional[str] = Query(None),  # Ta bort regex här
-    filter_author: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    # Konvertera tomma strängar till None
-    if filter_priority == "":
-        filter_priority = None
-    if filter_author == "":
-        filter_author = None
-    
-    # Validera filter_priority manuellt
-    if filter_priority is not None and filter_priority not in ["high", "medium", "low"]:
-        raise HTTPException(status_code=400, detail="Invalid priority filter")
-    
-    query = db.query(Todo)
-    
-    if filter_priority:
-        query = query.filter(Todo.priority == filter_priority)
-    
-    if filter_author:
-        query = query.filter(Todo.author.ilike(f"%{filter_author}%"))
-    
-    if sort_by == "date":
-        if order == "desc":
-            query = query.order_by(desc(Todo.created_at))
-        else:
-            query = query.order_by(asc(Todo.created_at))
-    elif sort_by == "priority":
-        if order == "desc":
-            query = query.order_by(
-                desc(Todo.priority == "high"),
-                desc(Todo.priority == "medium"),
-                desc(Todo.priority == "low")
-            )
-        else:
-            query = query.order_by(
-                asc(Todo.priority == "low"),
-                asc(Todo.priority == "medium"),
-                asc(Todo.priority == "high")
-            )
-    elif sort_by == "author":
-        if order == "desc":
-            query = query.order_by(desc(Todo.author))
-        else:
-            query = query.order_by(asc(Todo.author))
-    elif sort_by == "title":
-        if order == "desc":
-            query = query.order_by(desc(Todo.title))
-        else:
-            query = query.order_by(asc(Todo.title))
-    
-    return query.all()
 
 @router.post("/api/todos")
 async def create_todo(
@@ -173,3 +113,71 @@ async def get_todo_detail(todo_id: int, request: Request, db: Session = Depends(
         "request": request,
         "todo": todo
     })
+
+@router.post("/api/todos/{todo_id}/delete")
+async def delete_todo(todo_id: int, db: Session = Depends(get_db)):
+    todo = db.query(Todo).filter(Todo.id == todo_id).first()
+    if not todo:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    db.delete(todo)
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)
+
+@router.get("/api/todos")
+async def get_todos(
+    sort_by: str = Query("date", regex="^(date|priority|author|title)$"),
+    order: str = Query("desc", regex="^(asc|desc)$"),
+    filter_priority: Optional[str] = Query(None),
+    filter_author: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    # Convert empty strings to None
+    if filter_priority == "":
+        filter_priority = None
+    if filter_author == "":
+        filter_author = None
+
+    # Validate filter_priority manually
+    if filter_priority is not None and filter_priority not in ["high", "medium", "low"]:
+        raise HTTPException(status_code=400, detail="Invalid priority filter")
+
+    query = db.query(Todo)
+
+    if filter_priority:
+        query = query.filter(Todo.priority == filter_priority)
+
+    if filter_author:
+        query = query.filter(Todo.author.ilike(f"%{filter_author}%"))
+
+    if sort_by == "date":
+        if order == "desc":
+            query = query.order_by(desc(Todo.created_at))
+        else:
+            query = query.order_by(asc(Todo.created_at))
+    elif sort_by == "priority":
+        if order == "desc":
+            query = query.order_by(
+                desc(Todo.priority == "high"),
+                desc(Todo.priority == "medium"),
+                desc(Todo.priority == "low")
+            )
+        else:
+            query = query.order_by(
+                asc(Todo.priority == "low"),
+                asc(Todo.priority == "medium"),
+                asc(Todo.priority == "high")
+            )
+    elif sort_by == "author":
+        if order == "desc":
+            query = query.order_by(desc(Todo.author))
+        else:
+            query = query.order_by(asc(Todo.author))
+    elif sort_by == "title":
+        if order == "desc":
+            query = query.order_by(desc(Todo.title))
+        else:
+            query = query.order_by(asc(Todo.title))
+
+    todos = query.all()
+    return {"todos": [todo.__dict__ for todo in todos]}
