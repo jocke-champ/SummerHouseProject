@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>{{ shopping_list.name }} - Inköpslistor</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -123,7 +125,7 @@
                         
                         {% if not shopping_list.is_completed %}
                         <div class="item-actions">
-                                                    <button class="btn btn-danger" 
+                            <button class="btn btn-danger" 
                                 hx-delete="/api/shopping-items/{{ item.id }}" 
                                 hx-target="#item-{{ item.id }}"
                                 hx-swap="outerHTML" 
