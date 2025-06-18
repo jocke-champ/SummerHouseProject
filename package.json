@@ -1,0 +1,12 @@
+{
+  "name": "summer-house-manager",
+  "version": "1.0.0",
+  "description": "Summer House Manager - FastAPI application for managing todos and shopping lists",
+  "scripts": {
+    "dev": "uvicorn app.main:app --reload",
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+  },
+  "engines": {
+    "python": ">=3.10"
+  }
+} 
