@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Vercel
+.vercel
+
+# Local database (since we use in-memory on Vercel)
+summer_house.db
+
+# Docker (not needed for Vercel deployment)
+Dockerfile
